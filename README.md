@@ -39,7 +39,7 @@ the few estimated values are flagged in the interface.
 
 ```bash
 python3 -m http.server 8137      # then open http://localhost:8137
-# rebuild the data: cd build && ./download.sh && python3 build_world.py build_us.py build_content.py
+# rebuild the data: cd build && ./download.sh && python3 build_world.py && python3 build_us.py && python3 build_content.py
 ```
 
 See [`CLAUDE.md`](CLAUDE.md) for the architecture and [`build/CLAUDE.md`](build/CLAUDE.md)

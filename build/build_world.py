@@ -10,6 +10,54 @@ import common as C
 
 LATEST = 2024  # OWID/IEA GEO-2025 vintage: 2024 is the newest actual year.
 
+# UN M.49 sub-region -> friendly display region for the panel kicker.
+# The four-region analytical bucket (China/Europe/US/Rest-of-World) is computed
+# separately in `regionSplit` from OWID aggregate rows, so this only affects the
+# per-country `region` field the country panel shows above the country name.
+_SUBREGION_LABEL = {
+    "Northern America": "North America",
+    "Latin America and the Caribbean": "Latin America",
+    "Northern Europe": "Europe",
+    "Western Europe": "Europe",
+    "Southern Europe": "Europe",
+    "Eastern Europe": "Europe",
+    "Northern Africa": "Africa",
+    "Sub-Saharan Africa": "Africa",
+    "Central Asia": "Central Asia",
+    "Southern Asia": "South Asia",
+    "Eastern Asia": "East Asia",
+    "South-eastern Asia": "Southeast Asia",
+    "Western Asia": "Middle East",
+    "Australia and New Zealand": "Oceania",
+    "Melanesia": "Oceania",
+    "Micronesia": "Oceania",
+    "Polynesia": "Oceania",
+}
+
+# Per-country overrides where UN M.49 disagrees with common energy/geo convention.
+# TWN: ISO-3166 leaves Taiwan blank; East Asia is the obvious bucket.
+# IRN: UN puts Iran in Southern Asia; IEA/energy analyses put it in Middle East.
+# CYP: UN puts Cyprus in Western Asia; as an EU member it belongs with Europe.
+# Notes on other edge cases we deliberately keep as UN says: RUS -> Europe
+# (Eastern Europe), MEX -> Latin America (World Bank LAC convention matches UN),
+# TUR / ISR / SAU -> Middle East (Western Asia), Egypt / Morocco / DZA -> Africa
+# (per UN Northern Africa; we fold N. Africa into a single Africa bucket rather
+# than the sometimes-used MENA split).
+_REGION_OVERRIDE = {
+    "TWN": "East Asia",
+    "IRN": "Middle East",
+    "CYP": "Europe",
+}
+
+
+def _region_label(a3, subregion):
+    """Country-panel display region (e.g. 'East Asia'). Falls back to the empty
+    string only for codes with neither a UN sub-region nor an override — the
+    kicker will then render nothing (see world-view.js)."""
+    if a3 in _REGION_OVERRIDE:
+        return _REGION_OVERRIDE[a3]
+    return _SUBREGION_LABEL.get(subregion, "")
+
 
 def code_to_name():
     """ISO-a3 -> display name, taken from OWID Entity labels (clean, e.g. 'South Korea')."""
@@ -50,7 +98,7 @@ def build():
             continue
         meta = a3_meta[a3]
         rec = {"name": names.get(a3, meta["name"]),
-               "region": C.world_region(a3, meta["region"], meta["subregion"])}
+               "region": _region_label(a3, meta["subregion"])}
         if a3 in share:
             ser = C.series({y: v for y, v in share[a3].items() if y <= LATEST}, ystart=2012)
             if ser["years"]:

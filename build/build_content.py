@@ -19,8 +19,8 @@ EV_PRICES = {
     "source": "Cox Automotive / Kelley Blue Book average transaction prices (US)",
     "note": "In the US the average EV still costs more than the average new car — but the gap has narrowed sharply from its 2022 peak.",
     "cheapest": [
-        {"model": "Wuling Hongguang Mini EV", "priceUSD": 4950, "where": "China", "note": "China's runaway best-selling city car"},
-        {"model": "BYD Seagull", "priceUSD": 8000, "where": "China", "note": "Exported as the Dolphin Surf"},
+        {"model": "Wuling Hongguang Mini EV", "priceUSD": 6200, "where": "China", "note": "2026 5th-gen base (¥44,800) — China's best-selling city car"},
+        {"model": "BYD Seagull", "priceUSD": 10290, "where": "China", "note": "2026 relaunch base (¥69,900) — exported as the Dolphin Surf"},
         {"model": "Tata Tiago EV", "priceUSD": 8400, "where": "India", "note": "India's cheapest electric car"},
         {"model": "Dacia Spring", "priceUSD": 18400, "where": "Europe", "note": "€16,990 — Europe's budget EV"},
         {"model": "Citroën ë-C3", "priceUSD": 21600, "where": "Europe", "note": "€19,990 — built in Europe"},
@@ -29,7 +29,7 @@ EV_PRICES = {
 
 CALLOUTS = [
     {"flag": "🇨🇳", "title": "China: the giant",
-     "body": "About half of all new cars sold in China are electric. Its homegrown champion BYD now outsells Tesla worldwide, and a brutal domestic price war has produced capable EVs for under $10,000.",
+     "body": "About half of all new cars sold in China are electric. Its homegrown champion BYD now outsells Tesla in total car sales, and a brutal domestic price war has produced capable EVs for under $10,000.",
      "stat": "~48% of new cars electric (2024)"},
     {"flag": "🇳🇴", "title": "Norway: the finish line",
      "body": "Two decades of taxing gas cars hard and rewarding EVs pushed Norway to the edge of an all-electric new-car market — roughly a decade ahead of everyone else.",
@@ -40,9 +40,24 @@ CALLOUTS = [
 ]
 
 # Targeted body/year refinements from the audit (keyed by title substring).
+# Supported keys per entry:
+#   "date": str                — replaces the event's display date
+#   "body_append": str         — appends text to the body if not already present
+#   "body_replace": [(old,new)]— list of substring substitutions applied to the body
 TWEAKS = {
     "Robert Anderson": {"date": "c. 1832"},
     "Self-Starter": {"body_append": " (First demonstrated in 1911 and fitted to the 1912 Cadillac, it ended the dangerous hand-crank — and with it the electric car's biggest selling point.)"},
+    # Roadster #0001 was delivered to Elon Musk, not co-founder Ian Wright
+    # (Wright left Tesla in 2004, before any Roadster shipped).
+    "First Tesla Roadster Delivered": {
+        "body_replace": [("Roadster #0001 to co-founder Ian Wright", "Roadster #0001 to Elon Musk")],
+    },
+    # First-gen Prius went on sale in Japan on Dec 10, 1997, not October.
+    "Toyota Prius Launches": {"date": "December 1997"},
+    # 1959 Henney Kilowatt's 36-volt production model reached 40 mph, not 30.
+    "Henney Kilowatt": {
+        "body_replace": [("30 mph top speed", "40 mph top speed")],
+    },
 }
 
 # Editorial trim of the deep (pre-1990) history: the early section had too many
@@ -87,6 +102,9 @@ def build_timeline():
                     rec["date"] = tw["date"]
                 if "body_append" in tw and tw["body_append"] not in (rec["body"] or ""):
                     rec["body"] = (rec["body"] or "") + tw["body_append"]
+                for old, new in tw.get("body_replace", []):
+                    if old in (rec["body"] or ""):
+                        rec["body"] = rec["body"].replace(old, new)
         out.append(rec)
     out.sort(key=lambda r: int("".join(ch for ch in r["year"] if ch.isdigit()) or 0))
     C.out("timeline.json", out)

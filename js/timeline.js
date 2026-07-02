@@ -95,18 +95,57 @@ export function renderTimeline(container, events) {
   // even-length pre that's offset 0; with an odd-length pre that's offset 1.
   const preOffset = (pre.length % 2 === 0) ? 0 : 1;
 
-  // Slide-in on scroll. Once revealed, stay revealed (museum panels don't
-  // un-light as you walk past). rootMargin trips slightly before center.
-  const io = new IntersectionObserver((entries) => {
-    for (const en of entries) {
-      if (en.isIntersecting) {
-        en.target.classList.add("in-view");
-        io.unobserve(en.target);
+  // Reduced-motion users get every node revealed immediately — no observer, no
+  // scroll sweep. Otherwise readers who prefer no motion would still hit the
+  // opacity-0 initial state and see below-fold content stay blank until scroll.
+  // (base.css already zeroes transition/animation durations under the same
+  // media query, so the reveal is instantaneous.) `observe` is redefined here
+  // as an immediate-reveal so the prologue prepended by the "go even further
+  // back" bubble takes the same fast path without any special-casing at the
+  // call site.
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let observe;
+  if (reduce) {
+    observe = (root) => root.querySelectorAll(".tl-node, .tl-era")
+      .forEach((n) => n.classList.add("in-view"));
+    observe(mainWrap);
+  } else {
+    // Slide-in on scroll. Once revealed, stay revealed (museum panels don't
+    // un-light as you walk past). rootMargin trips slightly before center.
+    const io = new IntersectionObserver((entries) => {
+      for (const en of entries) {
+        if (en.isIntersecting) {
+          en.target.classList.add("in-view");
+          io.unobserve(en.target);
+        }
       }
-    }
-  }, { rootMargin: "0px 0px -12% 0px", threshold: 0.15 });
-  const observe = (root) => root.querySelectorAll(".tl-node, .tl-era").forEach((n) => io.observe(n));
-  observe(mainWrap);
+    }, { rootMargin: "0px 0px -12% 0px", threshold: 0.15 });
+    observe = (root) => root.querySelectorAll(".tl-node, .tl-era").forEach((n) => io.observe(n));
+    observe(mainWrap);
+
+    // Safety net for fast jumps (End key, scrollbar drag, programmatic scrollTo):
+    // when the reader skips over sections without generating enough intermediate
+    // frames, IntersectionObserver silently misses those elements and leaves them
+    // stuck at opacity 0. On every scroll, sweep the DOM live (so the prologue
+    // added by the "even further back" bubble is covered too) and force-reveal
+    // anything the viewport has already passed. IO stays the primary path so the
+    // staggered reveal on slow scroll is preserved; nothing runs at load.
+    let sweepQueued = false;
+    const sweep = () => {
+      sweepQueued = false;
+      const vh = window.innerHeight;
+      container.querySelectorAll(".tl-node:not(.in-view), .tl-era:not(.in-view)")
+        .forEach((n) => {
+          if (n.getBoundingClientRect().top < vh) {
+            n.classList.add("in-view");
+            io.unobserve(n);
+          }
+        });
+    };
+    window.addEventListener("scroll", () => {
+      if (!sweepQueued) { sweepQueued = true; requestAnimationFrame(sweep); }
+    }, { passive: true });
+  }
 
   // Reveal the prologue: build it, slot it ABOVE the bubble, and scroll the
   // reader up to its start so they travel further back in time.
@@ -128,7 +167,6 @@ export function renderTimeline(container, events) {
         firstEra.setAttribute("tabindex", "-1");
         firstEra.focus({ preventScroll: true });
       }
-      const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
       preWrap.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
     });
   }

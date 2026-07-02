@@ -7,6 +7,8 @@ import { trendChart } from "./charts/trend.js";
 
 // cost-to-charge assumptions (shown to the user in an (i) popover)
 const KWH_PER_MI = 0.30, MPG = 30, GAS = 3.40;
+// g CO₂/kWh, US grid average — EPA eGRID 2023 (~370) rising to ~386 (2024 release), we round to 380
+const US_AVG_CO2 = 380;
 
 const MAPS = [
   { el: "usmap-share",    key: "share",        metric: "share",    max: 25,  lo: "0%",  hi: "25%+", tip: (s) => `${s.share}% of new cars electric` },
@@ -112,11 +114,29 @@ function cleanPhrase(p) {
   return "dirtier than";
 }
 
+// prefer CO₂-ratio bucketing when the state has a disclosed g/kWh — the phrase
+// sits next to that number, so it must be consistent with it (WY at 826 g/kWh
+// is "far dirtier than" the ~380 g/kWh US average even though 30% of its power
+// is clean). Falls back to cleanPhrase(percent-clean) when co2 is missing.
+function co2Phrase(co2) {
+  const r = co2 / US_AVG_CO2;
+  if (r <= 0.4)  return "far cleaner than";
+  if (r <= 0.85) return "cleaner than";
+  if (r <  1.15) return "about as clean as";
+  if (r <  2)    return "dirtier than";
+  return "far dirtier than";
+}
+
 function renderPanel(ab) {
   const s = US[ab], meta = US._meta;
   const evCost = KWH_PER_MI * s.resPrice;   // $/100mi: 30 kWh × cents/kWh ÷ 100
   const gasCost = (100 / MPG * GAS);
   const cleanT = s.gridCleanThen, cleanN = s.gridClean;
+  const trendPhrase =
+    cleanN >= cleanT + 0.5 ? `up from ${cleanT}% in 2001` :
+    cleanN <= cleanT - 0.5 ? `down from ${cleanT}% in 2001` :
+    `steady near ${cleanT}% since 2001`;
+  const co2Clause = s.co2 ? ` and runs about <strong>${Math.round(s.co2)} g CO₂ per kWh</strong>,` : "";
   const panel = document.getElementById("us-panel");
 
   panel.innerHTML = `
@@ -165,8 +185,8 @@ function renderPanel(ab) {
       <div class="card wide">
         <h3>How clean is charging in ${s.name}?</h3>
         <p class="card-lead">An EV is only as clean as the grid that charges it. ${s.name}'s grid is
-          <strong>${cleanN}% clean power</strong> today — up from ${cleanT}% in 2001 — which makes charging here
-          <strong>${cleanPhrase(cleanN)}</strong> the typical US grid${s.co2 ? ` (about ${Math.round(s.co2)} g CO₂ per kWh)` : ""}.
+          <strong>${cleanN}% clean power</strong> today — ${trendPhrase} —${co2Clause} making charging here
+          <strong>${s.co2 ? co2Phrase(s.co2) : cleanPhrase(cleanN)}</strong> the typical US grid.
           <a href="https://maninae.github.io/grid-atlas/#${ab}" target="_blank" rel="noopener">See the full grid →</a></p>
         <div id="us-clean-chart"></div>
       </div>

@@ -62,11 +62,12 @@
 
 /* ---------- info popovers ---------- */
 .info-btn {
+  position: relative;
   font-family: var(--font-display);
   font-style: italic;
   font-size: 13px;
   line-height: 1;
-  width: 19px; height: 19px;
+  width: 22px; height: 22px;
   border-radius: 50%;
   border: 1.2px solid var(--ink-soft);
   color: var(--ink-soft);
@@ -74,6 +75,15 @@
   cursor: pointer;
   vertical-align: super;
   padding: 0;
+}
+/* Invisible hit-slop so the touch target reaches ~34×34 without changing the
+   button's box (captions don't reflow). Layered behind so the border/hover ring
+   still reads as the visual affordance. */
+.info-btn::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
 }
 .info-btn:hover { border-color: var(--accent); color: var(--accent); }
 
@@ -126,9 +136,25 @@
 }
 .legend-item { display: inline-flex; align-items: center; gap: 5px; }
 .legend-swatch { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
-.legend-ramp { width: 110px; height: 9px; border-radius: 5px; display: inline-block; }
+/* Position:relative so the growth legend's "0" label (nested inside) can be
+   pinned to the neutral fraction of the diverging ramp. */
+.legend-ramp { width: 110px; height: 9px; border-radius: 5px; display: inline-block; position: relative; }
 .legend-lo, .legend-hi, .legend-mid { font-size: 11px; }
-.legend-mid { color: var(--ink-soft); }
+/* Growth legend "0" label: absolutely positioned ABOVE the ramp at the neutral
+   fraction (set inline via style="left:%") so it sits ON the bar as a tick
+   marker rather than floating past the endpoint labels. translateX(-50%)
+   centers it on that fraction; translateY takes it fully above the bar with a
+   small gap. line-height:1 keeps the caret tight. */
+.legend-mid {
+  position: absolute;
+  left: 50%; /* default — overridden inline by legendHtml at neutral fraction */
+  bottom: 100%;
+  transform: translate(-50%, -3px);
+  color: var(--ink-soft);
+  white-space: nowrap;
+  pointer-events: none;
+  line-height: 1;
+}
 
 /* ---------- state chip (used by us-view / world-view chip rows) ---------- */
 .chip-mini {

@@ -38,24 +38,30 @@
   text-align: left; color: var(--ink-soft);
   background: none; border: 0; border-radius: 10px;
   padding: 10px 13px; cursor: pointer;
-  transition: color 0.18s ease, background-color 0.18s ease;
+  /* Only the text color eases — the active-pill background snaps. Easing the
+     background caused a ~180ms window where BOTH the outgoing and incoming tab
+     buttons showed the teal `--accent` fill during a tab switch. Hover keeps
+     its own scoped ease-in below so the rail still feels alive on pointer. */
+  transition: color 0.18s ease;
 }
 .tab-btn .tb-ico { font-size: 16px; line-height: 1; flex-shrink: 0; }
-.tab-btn:hover { color: var(--ink); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.tab-btn:hover { color: var(--ink); background: color-mix(in srgb, var(--accent) 10%, transparent); transition: color 0.18s ease, background-color 0.18s ease; }
 .tab-btn.active { color: var(--on-accent); background: var(--accent); }
 
-/* narrow screens: the rail drops to a fixed bottom bar */
+/* narrow screens: the rail drops to a fixed bottom bar. Tabs + toggle share
+   one flex row centered by `justify-content` (dropping the tabnav's `margin: 0 auto`
+   that used to strand the toggle off to the right at 70–105px away). */
 @media (max-width: 760px) {
   .eva-rail {
     top: auto; right: 0; left: 0; bottom: 0;
     width: auto; height: auto;
-    flex-direction: row; align-items: center; gap: 6px;
+    flex-direction: row; align-items: center; justify-content: center; gap: 6px;
     padding: 7px 10px;
     border-right: 0; border-top: 1px solid var(--rule);
   }
   .eva-rail .rail-brand { display: none; }       /* the hero kicker already brands each tab */
-  .tabnav { flex-direction: row; gap: 4px; margin: 0 auto; }
-  .tab-btn { font-size: 14px; padding: 8px 11px; gap: 7px; min-height: 44px; }
+  .tabnav { flex-direction: row; gap: 4px; }
+  .tab-btn { font-size: 14px; padding: 8px 11px; gap: 7px; min-height: 44px; min-width: 44px; }
   .tab-btn .tb-ico { font-size: 14px; }
   .eva-rail #theme-toggle { margin: 0; width: 44px; height: 44px; }
 }

@@ -4,8 +4,8 @@ A data-journalism site about the **global switch to electric cars** — sibling 
 Grid Atlas, same "Evergreen" aesthetic. Answers: *how fast is the world going
 electric, and what does it mean where you live?*
 
-- **New public repo** `Maninae/ev-atlas` → `maninae.github.io/ev-atlas`; linked from the maninae projects page.
-- **Local:** `~/Developer/ev-atlas`. No framework, no bundler. ES modules + D3 v7 + topojson from jsDelivr.
+- **New public repo** `Maninae/electric-vehicle-adoption` → `maninae.github.io/electric-vehicle-adoption`; linked from the maninae projects page.
+- **Local:** `~/Developer/electric-vehicle-adoption`. No framework, no bundler. ES modules + D3 v7 + topojson from jsDelivr.
 - **All data baked to static JSON** by a Python `build/` pipeline. Zero runtime API calls (same philosophy as Grid Atlas).
 - Audience: general US public. Copy is plain-language (~5th-grade), `(i)` popovers for depth, never repeat a point.
 

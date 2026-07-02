@@ -132,7 +132,18 @@ function setupInfo() {
     document.body.appendChild(pop);
     const r = btn.getBoundingClientRect();
     pop.style.maxWidth = "300px";
-    pop.style.top = (r.bottom + window.scrollY + 8) + "px";
+    // Prefer opening below; but if there isn't room under the button before the
+    // usable viewport bottom (the ≤760px bottom-bar rail clips the last ~25px),
+    // open above instead. Measure the rail live so desktop stays clean.
+    const rail = document.querySelector(".eva-rail");
+    const railBox = rail ? rail.getBoundingClientRect() : null;
+    // A bottom bar sits at the viewport bottom AND starts below the top (the
+    // desktop rail is full-height, top 0 → bottom = innerHeight too — not a bar).
+    const isBottomBar = railBox && railBox.top > 0 && railBox.bottom >= window.innerHeight - 4;
+    const bottomBar = isBottomBar ? railBox.height + 8 : 12;
+    const ph = pop.offsetHeight;
+    const openAbove = (r.bottom + 8 + ph) > (window.innerHeight - bottomBar) && r.top >= ph + 12;
+    pop.style.top = (openAbove ? (r.top + window.scrollY - ph - 8) : (r.bottom + window.scrollY + 8)) + "px";
     const w = pop.offsetWidth;
     pop.style.left = Math.max(8 + window.scrollX, Math.min(r.left + window.scrollX, window.scrollX + window.innerWidth - w - 8)) + "px";
   });
